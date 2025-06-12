@@ -1,0 +1,56 @@
+name: "[Release][Create] Create new release"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "conint-release-automation"
+          git config --global user.email "conint-release-automation@github.com"
+
+      - name: Create new branch and commit
+        run: |
+          git checkout -b release/{{date 'DD_MM_YYYY'}}
+          git push origin release/{{date 'DD_MM_YYYY'}}
+
+      - name: Set branch protection
+        run: |
+          curl -X PUT \
+            -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/branches/release/{{date 'DD_MM_YYYY'}}/protection \
+            -d '{
+              "required_status_checks": null,
+              "enforce_admins": true,
+              "required_pull_request_reviews": {
+                "dismiss_stale_reviews": true,
+                "required_approving_review_count": 1
+              },
+              "restrictions": null
+            }'
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr create --title "[Release] {{date 'DD_MM_YYYY'}}" \
+                       --body "Automated PR with protection" \
+                       --base main \
+                       --head release/{{date 'DD_MM_YYYY'}}
+
