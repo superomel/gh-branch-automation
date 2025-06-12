@@ -45,8 +45,8 @@ jobs:
         if: steps.check_branch.outputs.exists == 'false'
         run: |
           git checkout -b ${{ steps.gen.outputs.branch }}
-          echo "Auto-generated file at $(date)" > ".release-${{ steps.gen.outputs.branch }}.txt"
-          git add ".release-${{ steps.gen.outputs.branch }}.txt"
+          echo "Auto-generated file at $(date)" > .release.txt
+          git add .release.txt
           git commit -m "Auto: Add unique file to trigger PR"
           git push origin ${{ steps.gen.outputs.branch }}
 
