@@ -17,7 +17,7 @@ jobs:
       - name: Generate branch name from current date
         id: gen
         run: |
-          BRANCH_NAME="release/$(date +'%Y-%m-%d-%H-%M')"
+          BRANCH_NAME="release/$(date +'%Y-%m-%d')"
           echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
@@ -30,12 +30,28 @@ jobs:
           git config --global user.name "conint-release-automation"
           git config --global user.email "conint-release-automation@github.com"
 
+      - name: Check if branch already exists
+        id: check_branch
+        run: |
+          if git ls-remote --exit-code --heads origin "${{ steps.gen.outputs.branch }}"; then
+            echo "Branch ${{ steps.gen.outputs.branch }} already exists. Skipping workflow."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch ${{ steps.gen.outputs.branch }} does not exist. Proceeding."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create new branch and commit
+        if: steps.check_branch.outputs.exists == 'false'
         run: |
           git checkout -b ${{ steps.gen.outputs.branch }}
+          echo "Auto-generated file at $(date)" > ".release-${{ steps.gen.outputs.branch }}.txt"
+          git add ".release-${{ steps.gen.outputs.branch }}.txt"
+          git commit -m "Auto: Add unique file to trigger PR"
           git push origin ${{ steps.gen.outputs.branch }}
 
       - name: Set branch protection
+        if: steps.check_branch.outputs.exists == 'false'
         run: |
           curl -X PUT \
             -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
@@ -52,6 +68,7 @@ jobs:
             }'
 
       - name: Create Pull Request
+        if: steps.check_branch.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
