@@ -33,9 +33,16 @@ jobs:
       - name: Check if branch already exists
         id: check_branch
         run: |
+          OTHER_RELEASE=$(git ls-remote --heads origin | grep -E 'refs/heads/release[/-]' | grep -v production || true)
+
           if git ls-remote --exit-code --heads origin "${{ steps.gen.outputs.branch }}"; then
             echo "Branch ${{ steps.gen.outputs.branch }} already exists. Skipping workflow."
             echo "exists=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          elif [[ -n "$OTHER_RELEASE" ]]; then
+            echo "Branches "$OTHER_RELEASE" with release already exists. Skipping workflow."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            exit 1
           else
             echo "Branch ${{ steps.gen.outputs.branch }} does not exist. Proceeding."
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -72,7 +79,17 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh pr create --title "[Release] {{date 'DD_MM_YYYY'}}" \
+          gh pr create --title "[Release] ${{ steps.gen.outputs.branch }}" \
+                       --body "Automated PR with protection" \
+                       --base production \
+                       --head ${{ steps.gen.outputs.branch }}
+
+      - name: Create back Pull Request
+        if: steps.check_branch.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr create --title "[Release][Return] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \
                        --base main \
                        --head ${{ steps.gen.outputs.branch }}
