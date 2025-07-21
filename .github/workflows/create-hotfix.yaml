@@ -23,6 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: production
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Configure Git
@@ -51,7 +52,6 @@ jobs:
       - name: Create new branch and commit
         if: steps.check_branch.outputs.exists == 'false'
         run: |
-          git checkout production
           git checkout -b ${{ steps.gen.outputs.branch }}
           echo "Auto-generated file at $(date)" > .release.txt
           git add .release.txt
