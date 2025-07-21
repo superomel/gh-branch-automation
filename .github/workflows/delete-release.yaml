@@ -1,4 +1,4 @@
-name: "[Release][Delete] Delete release branch"
+name: "[Release][Delete] Delete release or hostfix branch"
 
 on:
   workflow_dispatch:
@@ -17,8 +17,8 @@ jobs:
       - name: Validate branch name
         run: |
           BRANCH="${{ github.event.inputs.release_branch }}"
-          if [[ "$BRANCH" != release/* ]]; then
-            echo "❌ Error: Only branches starting with 'release/' are allowed."
+          if [[ "$BRANCH" != release/* && "$BRANCH" != hotfix/* ]]; then
+            echo "❌ Error: Only branches starting with 'release/' or 'hotfix/' are allowed."
             exit 1
           fi
 
