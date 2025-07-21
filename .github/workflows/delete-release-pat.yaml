@@ -1,0 +1,67 @@
+name: "[Release][Delete][PAT] Delete release or hostfix branch"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Specify protected release branch to delete'
+        type: string
+        required: true
+
+
+jobs:
+  delete-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate branch name
+        run: |
+          BRANCH="${{ github.event.inputs.release_branch }}"
+          if [[ "$BRANCH" != release/* && "$BRANCH" != hotfix/* ]]; then
+            echo "❌ Error: Only branches starting with 'release/' or 'hotfix/' are allowed."
+            exit 1
+          fi
+
+      # - uses: actions/create-github-app-token@v2
+      #   id: app-token
+      #   with:
+      #     app-id: ${{ vars.APP_ID }}
+      #     private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.devops_pat }}
+
+      - name: Check if branch already exists
+        id: check_branch
+        run: |
+          if git ls-remote --exit-code --heads origin "${{ github.event.inputs.release_branch }}"; then
+            echo "Branch ${{ github.event.inputs.release_branch }} exist. Proceeding."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch ${{ github.event.inputs.release_branch }} not exists. Skipping workflow."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Remove branch protection
+        if: steps.check_branch.outputs.exists == 'true'
+        env:
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.devops_pat }}
+        run: |
+          gh api \
+            -X DELETE \
+            /repos/${{ github.repository }}/branches/${{ github.event.inputs.release_branch }}/protection
+
+      - name: Delete branch
+        if: steps.check_branch.outputs.exists == 'true'
+        env:
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.devops_pat }}
+        run: |
+          gh api \
+            -X DELETE \
+            /repos/${{ github.repository }}/git/refs/heads/${{ github.event.inputs.release_branch }}
