@@ -54,7 +54,7 @@ jobs:
         run: |
           gh api \
             -X DELETE \
-            /repos/${{ github.repository }}/branches/${{ github.event.inputs.release_branch }}/protection
+            /repos/${{ github.repository }}/branches/${{ github.event.inputs.release_branch }}/protection || echo "Protection already removed"
 
       - name: Delete branch
         if: steps.check_branch.outputs.exists == 'true'
