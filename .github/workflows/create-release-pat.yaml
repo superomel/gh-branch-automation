@@ -1,4 +1,4 @@
-name: "[Release][Create] Create new release"
+name: "[Release][Create][PAT] Create new release"
 
 on:
   workflow_dispatch:
@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      # - uses: actions/create-github-app-token@v2
+      #   id: app-token
+      #   with:
+      #     app-id: ${{ vars.APP_ID }}
+      #     private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: Generate branch name from current date
         id: gen
@@ -23,7 +23,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          # token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.DEVIOPS_PAT }}
 
       - name: Configure Git
         run: |
@@ -61,7 +62,7 @@ jobs:
         if: steps.check_branch.outputs.exists == 'false'
         run: |
           curl -X PUT \
-            -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
+            -H "Authorization: token ${{ secrets.DEVIOPS_PAT }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/branches/${{ steps.gen.outputs.branch }}/protection \
             -d '{
@@ -77,7 +78,8 @@ jobs:
       - name: Create Pull Request
         if: steps.check_branch.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.DEVIOPS_PAT }}
         run: |
           gh pr create --title "[Release] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \
@@ -87,7 +89,8 @@ jobs:
       - name: Create back Pull Request
         if: steps.check_branch.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.DEVIOPS_PAT }}
         run: |
           gh pr create --title "[Release][Return] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \

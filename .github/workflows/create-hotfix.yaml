@@ -1,4 +1,4 @@
-name: "[Release][Create] Create new release"
+name: "[Hotfix][Create] Create hotfix"
 
 on:
   workflow_dispatch:
@@ -17,12 +17,13 @@ jobs:
       - name: Generate branch name from current date
         id: gen
         run: |
-          BRANCH_NAME="release/$(date +'%Y-%m-%d')"
+          BRANCH_NAME="hotfix/$(date +'%Y-%m-%d')"
           echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: production
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Configure Git
@@ -33,14 +34,14 @@ jobs:
       - name: Check if branch already exists
         id: check_branch
         run: |
-          OTHER_RELEASE=$(git ls-remote --heads origin | grep -E 'refs/heads/release[/-]' | grep -v production || true)
+          OTHER_RELEASE=$(git ls-remote --heads origin | grep -E 'refs/heads/hotfix[/-]' | grep -v production || true)
 
           if git ls-remote --exit-code --heads origin "${{ steps.gen.outputs.branch }}"; then
             echo "Branch ${{ steps.gen.outputs.branch }} already exists. Skipping workflow."
             echo "exists=true" >> "$GITHUB_OUTPUT"
             exit 1
           elif [[ -n "$OTHER_RELEASE" ]]; then
-            echo "Branches "$OTHER_RELEASE" with release already exists. Skipping workflow."
+            echo "Branches "$OTHER_RELEASE" with hotfixes already exists. Skipping workflow."
             echo "exists=true" >> "$GITHUB_OUTPUT"
             exit 1
           else
@@ -79,7 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh pr create --title "[Release] ${{ steps.gen.outputs.branch }}" \
+          gh pr create --title "[Hotfix] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \
                        --base production \
                        --head ${{ steps.gen.outputs.branch }}
@@ -89,7 +90,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh pr create --title "[Release][Return] ${{ steps.gen.outputs.branch }}" \
+          gh pr create --title "[Hotfix][Return] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \
                        --base main \
                        --head ${{ steps.gen.outputs.branch }}

@@ -1,4 +1,4 @@
-name: "[Release][Create] Create new release"
+name: "[Hotfix][Create][PAT] Create hotfix"
 
 on:
   workflow_dispatch:
@@ -8,22 +8,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      # - uses: actions/create-github-app-token@v2
+      #   id: app-token
+      #   with:
+      #     app-id: ${{ vars.APP_ID }}
+      #     private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: Generate branch name from current date
         id: gen
         run: |
-          BRANCH_NAME="release/$(date +'%Y-%m-%d')"
+          BRANCH_NAME="hotfix/$(date +'%Y-%m-%d')"
           echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          ref: production
+          # token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.DEVIOPS_PAT }}
 
       - name: Configure Git
         run: |
@@ -33,14 +35,14 @@ jobs:
       - name: Check if branch already exists
         id: check_branch
         run: |
-          OTHER_RELEASE=$(git ls-remote --heads origin | grep -E 'refs/heads/release[/-]' | grep -v production || true)
+          OTHER_RELEASE=$(git ls-remote --heads origin | grep -E 'refs/heads/hotfix[/-]' | grep -v production || true)
 
           if git ls-remote --exit-code --heads origin "${{ steps.gen.outputs.branch }}"; then
             echo "Branch ${{ steps.gen.outputs.branch }} already exists. Skipping workflow."
             echo "exists=true" >> "$GITHUB_OUTPUT"
             exit 1
           elif [[ -n "$OTHER_RELEASE" ]]; then
-            echo "Branches "$OTHER_RELEASE" with release already exists. Skipping workflow."
+            echo "Branches "$OTHER_RELEASE" with hotfixes already exists. Skipping workflow."
             echo "exists=true" >> "$GITHUB_OUTPUT"
             exit 1
           else
@@ -61,7 +63,7 @@ jobs:
         if: steps.check_branch.outputs.exists == 'false'
         run: |
           curl -X PUT \
-            -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
+            -H "Authorization: token ${{ secrets.DEVIOPS_PAT }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/branches/${{ steps.gen.outputs.branch }}/protection \
             -d '{
@@ -77,9 +79,10 @@ jobs:
       - name: Create Pull Request
         if: steps.check_branch.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.DEVIOPS_PAT }}
         run: |
-          gh pr create --title "[Release] ${{ steps.gen.outputs.branch }}" \
+          gh pr create --title "[Hotfix] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \
                        --base production \
                        --head ${{ steps.gen.outputs.branch }}
@@ -87,9 +90,10 @@ jobs:
       - name: Create back Pull Request
         if: steps.check_branch.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.DEVIOPS_PAT }}
         run: |
-          gh pr create --title "[Release][Return] ${{ steps.gen.outputs.branch }}" \
+          gh pr create --title "[Hotfix][Return] ${{ steps.gen.outputs.branch }}" \
                        --body "Automated PR with protection" \
                        --base main \
                        --head ${{ steps.gen.outputs.branch }}
