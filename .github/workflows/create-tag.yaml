@@ -2,6 +2,12 @@ name: "[CIP] Create release"
 
 on:
   workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Debug release analyser'
+        type: boolean
+        default: false
+      
   push:
     branches:
       - production
@@ -26,6 +32,10 @@ jobs:
       - name: Install NPM dependencies and create tag release
         run: |
           npm install
-          npx semantic-release -d
+          if ${{ github.event.inputs.debug }}; then
+            npx semantic-release --debug
+          else
+            npx semantic-release
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.DEVIOPS_PAT }}
