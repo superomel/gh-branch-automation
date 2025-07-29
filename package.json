@@ -27,8 +27,7 @@
         {
           "successCommentCondition": false,
           "failComment": false
-        },
-        "@semantic-release/release-notes-generator"
+        }
       ]
     ]
   },
