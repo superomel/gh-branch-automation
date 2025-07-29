@@ -26,6 +26,6 @@ jobs:
       - name: Install NPM dependencies and create tag release
         run: |
           npm install
-          yarn workspaces run semantic-release
+          npx semantic-release -d
         env:
           GITHUB_TOKEN: ${{ secrets.DEVIOPS_PAT }}
