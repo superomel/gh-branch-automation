@@ -31,8 +31,9 @@ jobs:
 
       - name: Install NPM dependencies and create tag release
         run: |
+          DEBUG_MODE="${{ github.event.inputs.debug || 'false' }}"
           npm install
-          if ${{ github.event.inputs.debug }}; then
+          if [ "$DEBUG_MODE" = "true" ]; then
             npx semantic-release --debug
           else
             npx semantic-release
