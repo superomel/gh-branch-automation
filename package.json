@@ -1,0 +1,35 @@
+{
+  "name": "branch-automation",
+    "description": "NBA Engine services",
+    "author": "",
+    "license": "ISC",
+    "workspaces": [
+        "*"
+    ],
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:superomel/gh-branch-automation.git"
+    },
+
+  "devDependencies": {
+    "semantic-release": "^24.2.7"
+  },
+
+  "release": {
+        "debug": true,
+        "branches": [
+            "production"
+        ],
+        "plugins": [
+            [
+                "@semantic-release/github",
+                {
+                    "successComment": false,
+                    "failComment": false
+                }
+            ],
+            "@semantic-release/commit-analyzer"
+        ]
+    }
+}
