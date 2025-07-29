@@ -819,4 +819,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-!grpc_architecture.png⏎
+!grpc_architecture.png
+
+**/node_modules
+**/package-lock.json
