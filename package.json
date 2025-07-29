@@ -20,14 +20,16 @@
       "production"
     ],
     "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
       [
         "@semantic-release/github",
         {
-          "successComment": false,
+          "successCommentCondition": false,
           "failComment": false
-        }
-      ],
-      "@semantic-release/commit-analyzer"
+        },
+        "@semantic-release/release-notes-generator"
+      ]
     ]
   },
   "dependencies": {
